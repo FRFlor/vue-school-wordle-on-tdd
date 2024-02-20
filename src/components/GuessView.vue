@@ -20,7 +20,7 @@ function getFeedback(letterPosition: number): null | "correct" | "incorrect" | "
 </script>
 
 <template>
-  <ul class="word">
+  <ul class="word" data-testid="guess-view">
     <li v-for="(letter, index) in guess.padEnd(WORD_SIZE, ' ')"
         :key="`${letter}-${index}`"
         :data-letter="letter"
