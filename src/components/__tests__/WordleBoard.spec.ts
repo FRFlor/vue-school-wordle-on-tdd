@@ -1,9 +1,9 @@
 import {mount} from "@vue/test-utils"
 import WordleBoard from "../WordleBoard.vue"
 import {DEFEAT_MESSAGE, MAX_GUESSES_COUNT, VICTORY_MESSAGE, WORD_SIZE} from "../../settings"
+import type {UserEvent} from "@testing-library/user-event"
 import userEvent from "@testing-library/user-event"
 import {cleanup, render, screen} from "@testing-library/vue"
-import type {UserEvent} from "@testing-library/user-event"
 
 describe("WordleBoard", () => {
     let wordOfTheDay = "TESTS"
@@ -35,7 +35,7 @@ describe("WordleBoard", () => {
         test("a victory message appears when the user makes a guess that matches the word of the day", async () => {
             await playerTypesAndSubmitsGuess(wordOfTheDay)
 
-            expect(screen.queryByText(VICTORY_MESSAGE)).not.toBeNull();
+            expect(screen.queryByText(VICTORY_MESSAGE)).toBeInTheDocument()
         })
 
         describe.each(
@@ -54,16 +54,16 @@ describe("WordleBoard", () => {
                     }
 
                     if (shouldSeeTheDefeatMessage) {
-                        expect(screen.queryByText(DEFEAT_MESSAGE)).not.toBeNull();
+                        expect(screen.queryByText(DEFEAT_MESSAGE)).toBeInTheDocument()
                     } else {
-                        expect(screen.queryByText(DEFEAT_MESSAGE)).toBeNull();
+                        expect(screen.queryByText(DEFEAT_MESSAGE)).not.toBeInTheDocument()
                     }
                 })
             })
 
         test("no end-of-game message appears if the user has not yet made a guess", async () => {
-            expect(screen.queryByText(VICTORY_MESSAGE)).toBeNull();
-            expect(screen.queryByText(DEFEAT_MESSAGE)).toBeNull();
+            expect(screen.queryByText(VICTORY_MESSAGE)).not.toBeInTheDocument()
+            expect(screen.queryByText(DEFEAT_MESSAGE)).not.toBeInTheDocument()
         })
     })
 
@@ -92,44 +92,52 @@ describe("WordleBoard", () => {
     })
 
     describe("Player input", () => {
+        test.skip("remains in focus the entire time", async () => {
+            // TODO: Investigate why <body> is focused at the start of test when using Testing Library
+            expect(screen.getByRole("textbox")).toHaveFocus()
+
+            await user.tab()
+
+            expect(screen.getByRole("textbox")).toHaveFocus()
+        })
+
         test("the input gets cleared after each submission", async () => {
             await playerTypesAndSubmitsGuess("WRONG")
 
-            expect(screen.queryByDisplayValue("WRONG")).toBeNull();
+            expect(screen.queryByDisplayValue("WRONG")).not.toBeInTheDocument()
         })
 
         test(`player guesses are limited to ${WORD_SIZE} letters`, async () => {
             await playerTypesAndSubmitsGuess(wordOfTheDay + "EXTRA")
 
-            expect(screen.queryByText(VICTORY_MESSAGE)).not.toBeNull();
+            expect(screen.queryByText(VICTORY_MESSAGE)).toBeInTheDocument()
         })
 
         test("player guesses can only be submitted if they are real words", async () => {
             await playerTypesAndSubmitsGuess("QWERT")
 
-            expect(screen.queryByText(VICTORY_MESSAGE)).toBeNull();
-            expect(screen.queryByText(DEFEAT_MESSAGE)).toBeNull();
+            expect(screen.queryByText(VICTORY_MESSAGE)).not.toBeInTheDocument()
+            expect(screen.queryByText(DEFEAT_MESSAGE)).not.toBeInTheDocument()
         })
 
         test("player guesses are not case-sensitive", async () => {
             await playerTypesAndSubmitsGuess(wordOfTheDay.toLowerCase())
 
-            expect(screen.queryByText(VICTORY_MESSAGE)).not.toBeNull();
+            expect(screen.queryByText(VICTORY_MESSAGE)).toBeInTheDocument()
         })
 
         test("player guesses can only contain letters", async () => {
             await playerTypesGuess("H3!RT")
 
-            expect(screen.queryByDisplayValue("HRT")).not.toBeNull();
+            expect(screen.queryByDisplayValue("HRT")).toBeInTheDocument()
         })
 
         test("non-letter characters do not render on the screen while being typed", async () => {
             await playerTypesGuess("12")
             await playerTypesGuess("123")
 
-            expect(screen.queryByDisplayValue("12")).toBeNull();
-            expect(screen.queryByDisplayValue("123")).toBeNull();
-            expect(screen.queryByDisplayValue("")).not.toBeNull();
+            expect(screen.queryByDisplayValue("12")).not.toBeInTheDocument()
+            expect(screen.queryByDisplayValue("123")).not.toBeInTheDocument()
         })
 
         test("the player loses control after the max amount of guesses have been sent", async () => {
@@ -146,13 +154,13 @@ describe("WordleBoard", () => {
                 await playerTypesAndSubmitsGuess(guess)
             }
 
-            expect(screen.queryByRole<HTMLInputElement>('textbox')?.disabled).toBe(true)
+            expect(screen.queryByRole<HTMLInputElement>("textbox")).toBeDisabled()
         })
 
         test("the player loses control after the correct guess has been given", async () => {
             await playerTypesAndSubmitsGuess(wordOfTheDay)
 
-            expect(screen.queryByRole<HTMLInputElement>('textbox')?.disabled).toBe(true)
+            expect(screen.queryByRole<HTMLInputElement>("textbox")).toBeDisabled()
         })
     })
 
@@ -209,13 +217,13 @@ describe("WordleBoard", () => {
         test("hints are not displayed until the player submits their guess", async () => {
             cleanup();
             const {container} = render(WordleBoard, {props: {wordOfTheDay}})
-            expect(container.querySelector("[data-letter-feedback]"), "Feedback was being rendered before the player started typing their guess").toBeNull()
+            expect(container.querySelector("[data-letter-feedback]"), "Feedback was being rendered before the player started typing their guess").not.toBeInTheDocument()
 
             await playerTypesGuess(wordOfTheDay)
-            expect(container.querySelector("[data-letter-feedback]"), "Feedback was rendered while the player was typing their guess").toBeNull()
+            expect(container.querySelector("[data-letter-feedback]"), "Feedback was rendered while the player was typing their guess").not.toBeInTheDocument()
 
             await playerPressesEnter()
-            expect(container.querySelector("[data-letter-feedback]"), "Feedback was not rendered after the player submitted their guess").not.toBeNull()
+            expect(container.querySelector("[data-letter-feedback]"), "Feedback was not rendered after the player submitted their guess").toBeInTheDocument()
         })
 
         describe.each([
