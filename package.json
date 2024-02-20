@@ -12,7 +12,7 @@
     "type-check": "vue-tsc --noEmit -p tsconfig.vitest.json --composite false"
   },
   "dependencies": {
-    "vue": "^3.3.4"
+    "vue": "^3.4"
   },
   "devDependencies": {
     "@simonsmith/cypress-image-snapshot": "^9.0.1",
